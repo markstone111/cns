@@ -456,6 +456,340 @@ int main() {
 
 
 
+
+
+
+Vigenere Cipher + Index of Coincidence + Kasiski Test
+
+
+
+
+
+
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+
+/* ---------------- GCD FUNCTION ---------------- */
+
+int gcd(int a, int b) {
+
+    while (b != 0) {
+        int temp = b;
+        b = a % b;
+        a = temp;
+    }
+
+    return a;
+}
+
+/* ---------------- VIGENERE ENCRYPTION ---------------- */
+
+void encrypt(FILE *inputFile, FILE *outputFile, char key[]) {
+
+    int ch;
+    int i = 0;
+    int m = strlen(key);
+
+    while ((ch = fgetc(inputFile)) != EOF) {
+
+        if (isupper(ch)) {
+
+            ch = ((ch - 'A' +
+                  (toupper(key[i % m]) - 'A')) % 26) + 'A';
+
+            i++;
+
+        } else if (islower(ch)) {
+
+            ch = ((ch - 'a' +
+                  (tolower(key[i % m]) - 'a')) % 26) + 'a';
+
+            i++;
+        }
+
+        fputc(ch, outputFile);
+    }
+}
+
+/* ---------------- VIGENERE DECRYPTION ---------------- */
+
+void decrypt(FILE *inputFile, FILE *outputFile, char key[]) {
+
+    int ch;
+    int i = 0;
+    int m = strlen(key);
+
+    while ((ch = fgetc(inputFile)) != EOF) {
+
+        if (isupper(ch)) {
+
+            ch = ((ch - 'A' -
+                  (toupper(key[i % m]) - 'A') + 26) % 26) + 'A';
+
+            i++;
+
+        } else if (islower(ch)) {
+
+            ch = ((ch - 'a' -
+                  (tolower(key[i % m]) - 'a') + 26) % 26) + 'a';
+
+            i++;
+        }
+
+        fputc(ch, outputFile);
+    }
+}
+
+/* ---------------- INDEX OF COINCIDENCE ---------------- */
+
+double calculateIC(char filename[]) {
+
+    FILE *fp;
+
+    int freq[26] = {0};
+
+    int totalLetters = 0;
+    int ch, i;
+
+    double sum = 0.0;
+    double ic;
+
+    fp = fopen(filename, "r");
+
+    if (fp == NULL) {
+        printf("Cannot open file %s\n", filename);
+        return 0;
+    }
+
+    while ((ch = fgetc(fp)) != EOF) {
+
+        if (isalpha(ch)) {
+
+            ch = toupper(ch);
+
+            freq[ch - 'A']++;
+
+            totalLetters++;
+        }
+    }
+
+    fclose(fp);
+
+    for (i = 0; i < 26; i++) {
+
+        sum += freq[i] * (freq[i] - 1);
+    }
+
+    ic = sum / (totalLetters * (totalLetters - 1));
+
+    return ic;
+}
+
+/* ---------------- KASISKI TEST ---------------- */
+
+void kasiskiTest(char filename[]) {
+
+    FILE *fp;
+
+    char text[5000];
+
+    int len, i, j;
+    int keyLength = 0;
+
+    fp = fopen(filename, "r");
+
+    if (fp == NULL) {
+        printf("Cannot open ciphertext file.\n");
+        return;
+    }
+
+    fscanf(fp, "%s", text);
+
+    fclose(fp);
+
+    len = strlen(text);
+
+    printf("\n----- KASISKI TEST -----\n");
+
+    printf("\nRepeated patterns found:\n\n");
+
+    /* Check repeated patterns of length 3, 4 and 5 */
+
+    for (int patternLength = 3;
+         patternLength <= 5;
+         patternLength++) {
+
+        for (i = 0; i < len - patternLength; i++) {
+
+            for (j = i + patternLength;
+                 j < len - patternLength;
+                 j++) {
+
+                if (strncmp(&text[i],
+                            &text[j],
+                            patternLength) == 0) {
+
+                    int distance = j - i;
+
+                    printf("Pattern: ");
+
+                    for (int k = 0;
+                         k < patternLength;
+                         k++) {
+
+                        printf("%c", text[i + k]);
+                    }
+
+                    printf(" | Positions: %d & %d",
+                           i, j);
+
+                    printf(" | Distance: %d\n",
+                           distance);
+
+                    /* Calculate GCD */
+
+                    if (keyLength == 0)
+                        keyLength = distance;
+
+                    else
+                        keyLength =
+                        gcd(keyLength, distance);
+                }
+            }
+        }
+    }
+
+    if (keyLength != 0)
+        printf("\nEstimated Key Length: %d\n",
+               keyLength);
+
+    else
+        printf("\nNo repeated patterns found.\n");
+}
+
+/* ---------------- MAIN FUNCTION ---------------- */
+
+int main() {
+
+    int choice;
+
+    char key[100];
+
+    FILE *fin;
+    FILE *fout;
+
+    double plainIC;
+    double cipherIC;
+
+    printf("VIGENERE CIPHER + IOC + KASISKI TEST\n");
+
+    printf("\n1. Encrypt plaintext.txt");
+    printf("\n2. Decrypt ciphertext.txt");
+
+    printf("\n\nEnter your choice: ");
+
+    scanf("%d", &choice);
+
+    printf("Enter Vigenere keyword: ");
+
+    scanf("%s", key);
+
+    if (choice == 1) {
+
+        fin = fopen("plaintext.txt", "r");
+
+        if (fin == NULL) {
+
+            printf("plaintext.txt not found.\n");
+
+            return 1;
+        }
+
+        fout = fopen("ciphertext.txt", "w");
+
+        encrypt(fin, fout, key);
+
+        fclose(fin);
+        fclose(fout);
+
+        printf("\nEncryption completed.");
+        printf("\nCiphertext stored in ciphertext.txt\n");
+
+        /* IC Calculation */
+
+        plainIC = calculateIC("plaintext.txt");
+
+        cipherIC = calculateIC("ciphertext.txt");
+
+        printf("\n----- INDEX OF COINCIDENCE -----\n");
+
+        printf("IC of Plaintext  : %.4f\n",
+               plainIC);
+
+        printf("IC of Ciphertext : %.4f\n",
+               cipherIC);
+
+        /* Kasiski Test */
+
+        kasiskiTest("ciphertext.txt");
+
+    }
+
+    else if (choice == 2) {
+
+        fin = fopen("ciphertext.txt", "r");
+
+        if (fin == NULL) {
+
+            printf("ciphertext.txt not found.\n");
+
+            return 1;
+        }
+
+        fout = fopen("decrypted.txt", "w");
+
+        decrypt(fin, fout, key);
+
+        fclose(fin);
+        fclose(fout);
+
+        printf("\nDecryption completed.");
+
+        printf("\nDecrypted text stored in decrypted.txt\n");
+    }
+
+    else {
+
+        printf("Invalid choice.\n");
+    }
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 KASISKI TEST
 
 
@@ -570,6 +904,22 @@ int main() {
 
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -957,6 +1307,424 @@ int main() {
 
 
 
+IMPROVED PLAYFAIR5X5 with IOC
+
+
+
+
+
+
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+
+char matrix[5][5];
+
+/* ---------------- PLAYFAIR MATRIX ---------------- */
+
+void generateMatrix(char key[]) {
+
+    int alphabet[26] = {0};
+
+    int i, k = 0;
+
+    /* Treat J as I */
+    alphabet['J' - 'A'] = 1;
+
+    for (i = 0; key[i] != '\0'; i++) {
+
+        char c = toupper(key[i]);
+
+        if (c == 'J')
+            c = 'I';
+
+        if (isalpha(c) && !alphabet[c - 'A']) {
+
+            matrix[k / 5][k % 5] = c;
+
+            alphabet[c - 'A'] = 1;
+
+            k++;
+        }
+    }
+
+    /* Fill remaining alphabet */
+
+    for (i = 0; i < 26; i++) {
+
+        if (!alphabet[i]) {
+
+            matrix[k / 5][k % 5] = 'A' + i;
+
+            k++;
+        }
+    }
+}
+
+/* ---------------- FIND POSITION ---------------- */
+
+void findPosition(char c, int *row, int *col) {
+
+    int i, j;
+
+    if (c == 'J')
+        c = 'I';
+
+    for (i = 0; i < 5; i++) {
+
+        for (j = 0; j < 5; j++) {
+
+            if (matrix[i][j] == c) {
+
+                *row = i;
+                *col = j;
+
+                return;
+            }
+        }
+    }
+}
+
+/* ---------------- PREPROCESS PLAINTEXT ---------------- */
+
+void preprocessText(FILE *inputFile, char processedText[]) {
+
+    int ch;
+    int index = 0;
+
+    char previous = '\0';
+
+    while ((ch = fgetc(inputFile)) != EOF) {
+
+        if (isalpha(ch)) {
+
+            ch = toupper(ch);
+
+            if (ch == 'J')
+                ch = 'I';
+
+            /* Handle repeated letters */
+
+            if (previous == ch) {
+
+                processedText[index++] = 'X';
+            }
+
+            processedText[index++] = ch;
+
+            previous = ch;
+        }
+    }
+
+    /* If odd length, append X */
+
+    if (index % 2 != 0) {
+
+        processedText[index++] = 'X';
+    }
+
+    processedText[index] = '\0';
+}
+
+/* ---------------- PLAYFAIR ENCRYPTION ---------------- */
+
+void encrypt(char text[], FILE *outputFile) {
+
+    int i;
+
+    int r1, c1, r2, c2;
+
+    for (i = 0; text[i] != '\0'; i += 2) {
+
+        char a = text[i];
+        char b = text[i + 1];
+
+        findPosition(a, &r1, &c1);
+
+        findPosition(b, &r2, &c2);
+
+        /* Same row */
+
+        if (r1 == r2) {
+
+            fputc(matrix[r1][(c1 + 1) % 5], outputFile);
+
+            fputc(matrix[r2][(c2 + 1) % 5], outputFile);
+        }
+
+        /* Same column */
+
+        else if (c1 == c2) {
+
+            fputc(matrix[(r1 + 1) % 5][c1], outputFile);
+
+            fputc(matrix[(r2 + 1) % 5][c2], outputFile);
+        }
+
+        /* Rectangle rule */
+
+        else {
+
+            fputc(matrix[r1][c2], outputFile);
+
+            fputc(matrix[r2][c1], outputFile);
+        }
+    }
+}
+
+/* ---------------- PLAYFAIR DECRYPTION ---------------- */
+
+void decrypt(FILE *inputFile, FILE *outputFile) {
+
+    char text[5000];
+
+    int index = 0;
+
+    int ch;
+
+    int r1, c1, r2, c2;
+
+    while ((ch = fgetc(inputFile)) != EOF) {
+
+        if (isalpha(ch)) {
+
+            text[index++] = toupper(ch);
+        }
+    }
+
+    text[index] = '\0';
+
+    for (int i = 0; text[i] != '\0'; i += 2) {
+
+        char a = text[i];
+        char b = text[i + 1];
+
+        findPosition(a, &r1, &c1);
+
+        findPosition(b, &r2, &c2);
+
+        /* Same row */
+
+        if (r1 == r2) {
+
+            fputc(matrix[r1][(c1 + 4) % 5], outputFile);
+
+            fputc(matrix[r2][(c2 + 4) % 5], outputFile);
+        }
+
+        /* Same column */
+
+        else if (c1 == c2) {
+
+            fputc(matrix[(r1 + 4) % 5][c1], outputFile);
+
+            fputc(matrix[(r2 + 4) % 5][c2], outputFile);
+        }
+
+        /* Rectangle rule */
+
+        else {
+
+            fputc(matrix[r1][c2], outputFile);
+
+            fputc(matrix[r2][c1], outputFile);
+        }
+    }
+}
+
+/* ---------------- INDEX OF COINCIDENCE ---------------- */
+
+double calculateIC(char filename[]) {
+
+    FILE *fp;
+
+    int freq[26] = {0};
+
+    int totalLetters = 0;
+
+    int ch, i;
+
+    double sum = 0.0;
+
+    double ic;
+
+    fp = fopen(filename, "r");
+
+    if (fp == NULL) {
+
+        printf("Cannot open file %s\n", filename);
+
+        return 0;
+    }
+
+    while ((ch = fgetc(fp)) != EOF) {
+
+        if (isalpha(ch)) {
+
+            ch = toupper(ch);
+
+            if (ch == 'J')
+                ch = 'I';
+
+            freq[ch - 'A']++;
+
+            totalLetters++;
+        }
+    }
+
+    fclose(fp);
+
+    for (i = 0; i < 26; i++) {
+
+        sum += freq[i] * (freq[i] - 1);
+    }
+
+    ic = sum / (totalLetters * (totalLetters - 1));
+
+    return ic;
+}
+
+/* ---------------- DISPLAY MATRIX ---------------- */
+
+void displayMatrix() {
+
+    int i, j;
+
+    printf("\nPlayfair Matrix:\n\n");
+
+    for (i = 0; i < 5; i++) {
+
+        for (j = 0; j < 5; j++) {
+
+            printf("%c ", matrix[i][j]);
+        }
+
+        printf("\n");
+    }
+}
+
+/* ---------------- MAIN FUNCTION ---------------- */
+
+int main() {
+
+    int choice;
+
+    char key[100];
+
+    char processedText[5000];
+
+    FILE *fin, *fout;
+
+    double plainIC, cipherIC;
+
+    printf("PLAYFAIR CIPHER (5x5) WITH IOC\n");
+
+    printf("\n1. Encrypt");
+    printf("\n2. Decrypt");
+
+    printf("\n\nEnter your choice: ");
+
+    scanf("%d", &choice);
+
+    printf("Enter keyword: ");
+
+    scanf("%s", key);
+
+    generateMatrix(key);
+
+    displayMatrix();
+
+    /* ENCRYPTION */
+
+    if (choice == 1) {
+
+        fin = fopen("plaintext.txt", "r");
+
+        if (fin == NULL) {
+
+            printf("plaintext.txt not found.\n");
+
+            return 1;
+        }
+
+        preprocessText(fin, processedText);
+
+        fclose(fin);
+
+        printf("\nProcessed Plaintext:\n%s\n",
+               processedText);
+
+        fout = fopen("ciphertext.txt", "w");
+
+        encrypt(processedText, fout);
+
+        fclose(fout);
+
+        printf("\nEncryption completed.");
+
+        printf("\nCiphertext stored in ciphertext.txt\n");
+
+        plainIC = calculateIC("plaintext.txt");
+
+        cipherIC = calculateIC("ciphertext.txt");
+
+        printf("\n----- INDEX OF COINCIDENCE -----\n");
+
+        printf("IC of Plaintext  : %.4f\n",
+               plainIC);
+
+        printf("IC of Ciphertext : %.4f\n",
+               cipherIC);
+    }
+
+    /* DECRYPTION */
+
+    else if (choice == 2) {
+
+        fin = fopen("ciphertext.txt", "r");
+
+        if (fin == NULL) {
+
+            printf("ciphertext.txt not found.\n");
+
+            return 1;
+        }
+
+        fout = fopen("decrypted.txt", "w");
+
+        decrypt(fin, fout);
+
+        fclose(fin);
+
+        fclose(fout);
+
+        printf("\nDecryption completed.");
+
+        printf("\nDecrypted text stored in decrypted.txt\n");
+    }
+
+    else {
+
+        printf("Invalid choice.\n");
+    }
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1105,6 +1873,48 @@ int main() {
 
 
 RSA
+
+
+
+
+
+Step 1 — Choose Two Prime Numbers p and q
+Example:
+p = 11
+q = 13
+
+Step 2 — Compute n=p×q
+Example:
+n = 11 × 13 = 143
+
+Step 3 — Compute Euler Totient ϕ(n)=(p−1)(q−1)
+Example:
+φ = 10 × 12 = 120
+
+Step 4 — Choose e
+Conditions:
+1<e<φ(n)
+gcd(e, φ) = 1
+Example:
+e = 7
+
+Step 5 — Compute d
+d×e≡1(modϕ(n))
+
+Find multiplicative inverse.
+Example:
+d = 103
+because:
+(103 × 7) mod 120 = 1
+
+Final Keys
+Key	Value
+Public Key	(e,n)
+Private Key	(d,n)
+
+
+
+
 
 
 
