@@ -189,6 +189,229 @@ int main()
 
 
 
+
+
+MONOAPLHABETIC WITH IOC
+
+
+
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+
+/* ---------------- ENCRYPT ---------------- */
+
+void encrypt(FILE *inputFile, FILE *outputFile, char key[]) {
+
+    int ch;
+
+    while ((ch = fgetc(inputFile)) != EOF) {
+
+        if (isupper(ch)) {
+
+            ch = toupper(key[ch - 'A']);
+
+        } else if (islower(ch)) {
+
+            ch = tolower(key[ch - 'a']);
+        }
+
+        fputc(ch, outputFile);
+    }
+}
+
+/* ---------------- DECRYPT ---------------- */
+
+void decrypt(FILE *inputFile, FILE *outputFile, char key[]) {
+
+    int ch, i;
+
+    while ((ch = fgetc(inputFile)) != EOF) {
+
+        if (isalpha(ch)) {
+
+            char target = toupper(ch);
+
+            for (i = 0; i < 26; i++) {
+
+                if (toupper(key[i]) == target) {
+
+                    if (isupper(ch))
+                        ch = 'A' + i;
+                    else
+                        ch = 'a' + i;
+
+                    break;
+                }
+            }
+        }
+
+        fputc(ch, outputFile);
+    }
+}
+
+/* ---------------- INDEX OF COINCIDENCE ---------------- */
+
+double calculateIC(char filename[]) {
+
+    FILE *fp;
+
+    int freq[26] = {0};
+    int totalLetters = 0;
+
+    int ch, i;
+
+    double sum = 0.0;
+    double ic;
+
+    fp = fopen(filename, "r");
+
+    if (fp == NULL) {
+
+        printf("Cannot open %s\n", filename);
+        return 0;
+    }
+
+    while ((ch = fgetc(fp)) != EOF) {
+
+        if (isalpha(ch)) {
+
+            ch = toupper(ch);
+
+            freq[ch - 'A']++;
+
+            totalLetters++;
+        }
+    }
+
+    fclose(fp);
+
+    if (totalLetters < 2)
+        return 0;
+
+    for (i = 0; i < 26; i++) {
+
+        sum += freq[i] * (freq[i] - 1);
+    }
+
+    ic = sum / (totalLetters * (totalLetters - 1));
+
+    return ic;
+}
+
+/* ---------------- MAIN ---------------- */
+
+int main() {
+
+    int choice;
+
+    char key[27];
+
+    FILE *fin;
+    FILE *fout;
+
+    double plainIC, cipherIC;
+
+    printf("MONOALPHABETIC CIPHER WITH IOC\n");
+
+    printf("\n1. Encrypt plaintext.txt");
+    printf("\n2. Decrypt ciphertext.txt");
+
+    printf("\n\nEnter your choice: ");
+    scanf("%d", &choice);
+
+    printf("Enter 26-letter substitution key: ");
+    scanf("%26s", key);
+
+    if (choice == 1) {
+
+        fin = fopen("plaintext.txt", "r");
+
+        if (fin == NULL) {
+
+            printf("plaintext.txt not found.\n");
+            return 1;
+        }
+
+        fout = fopen("ciphertext.txt", "w");
+
+        if (fout == NULL) {
+
+            printf("Cannot create ciphertext.txt\n");
+            fclose(fin);
+            return 1;
+        }
+
+        encrypt(fin, fout, key);
+
+        fclose(fin);
+        fclose(fout);
+
+        printf("\nEncryption completed.");
+        printf("\nCiphertext stored in ciphertext.txt\n");
+
+        plainIC = calculateIC("plaintext.txt");
+        cipherIC = calculateIC("ciphertext.txt");
+
+        printf("\n----- INDEX OF COINCIDENCE -----\n");
+
+        printf("IC of Plaintext  : %.4f\n", plainIC);
+        printf("IC of Ciphertext : %.4f\n", cipherIC);
+    }
+
+    else if (choice == 2) {
+
+        fin = fopen("ciphertext.txt", "r");
+
+        if (fin == NULL) {
+
+            printf("ciphertext.txt not found.\n");
+            return 1;
+        }
+
+        fout = fopen("decrypted.txt", "w");
+
+        if (fout == NULL) {
+
+            printf("Cannot create decrypted.txt\n");
+            fclose(fin);
+            return 1;
+        }
+
+        decrypt(fin, fout, key);
+
+        fclose(fin);
+        fclose(fout);
+
+        printf("\nDecryption completed.");
+        printf("\nDecrypted text stored in decrypted.txt\n");
+    }
+
+    else {
+
+        printf("Invalid choice.\n");
+    }
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 MONOALPHABETIC (without file)
 
 
@@ -360,17 +583,13 @@ int main() {
         printf("Success! Decrypted text saved to 'decrypted.txt'.\n");
 
     } else {
-        printf("Invalid choice (You entered: %c). Please choose 1 or 2.\n", choice);
+        printf("Invalid choice (You entered: %d). Please choose 1 or 2.\n", choice);
         return 1;
     }
 
     fclose(fin);
     fclose(fout);
 
-    return 0;
-}
-
-    fclose(fout);
     return 0;
 }
 
@@ -478,6 +697,222 @@ int main() {
 
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+CEASER CIPHER WITH IOC
+
+
+
+
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+
+/* ---------------- CAESAR ENCRYPTION ---------------- */
+
+void encrypt(FILE *inputFile, FILE *outputFile, int key) {
+
+    int ch;
+    key = key % 26;
+
+    while ((ch = fgetc(inputFile)) != EOF) {
+
+        if (isupper(ch)) {
+
+            ch = ((ch - 'A' + key) % 26) + 'A';
+
+        } else if (islower(ch)) {
+
+            ch = ((ch - 'a' + key) % 26) + 'a';
+        }
+
+        fputc(ch, outputFile);
+    }
+}
+
+/* ---------------- CAESAR DECRYPTION ---------------- */
+
+void decrypt(FILE *inputFile, FILE *outputFile, int key) {
+
+    int ch;
+    key = key % 26;
+
+    while ((ch = fgetc(inputFile)) != EOF) {
+
+        if (isupper(ch)) {
+
+            ch = ((ch - 'A' - key + 26) % 26) + 'A';
+
+        } else if (islower(ch)) {
+
+            ch = ((ch - 'a' - key + 26) % 26) + 'a';
+        }
+
+        fputc(ch, outputFile);
+    }
+}
+
+/* ---------------- INDEX OF COINCIDENCE ---------------- */
+
+double calculateIC(char filename[]) {
+
+    FILE *fp;
+
+    int freq[26] = {0};
+    int totalLetters = 0;
+    int ch, i;
+
+    double sum = 0.0;
+    double ic;
+
+    fp = fopen(filename, "r");
+
+    if (fp == NULL) {
+
+        printf("Cannot open %s\n", filename);
+        return 0;
+    }
+
+    while ((ch = fgetc(fp)) != EOF) {
+
+        if (isalpha(ch)) {
+
+            ch = toupper(ch);
+
+            freq[ch - 'A']++;
+
+            totalLetters++;
+        }
+    }
+
+    fclose(fp);
+
+    if (totalLetters < 2)
+        return 0;
+
+    for (i = 0; i < 26; i++) {
+
+        sum += freq[i] * (freq[i] - 1);
+    }
+
+    ic = sum / (totalLetters * (totalLetters - 1));
+
+    return ic;
+}
+
+/* ---------------- MAIN ---------------- */
+
+int main() {
+
+    int choice;
+    int key;
+
+    FILE *fin;
+    FILE *fout;
+
+    double plainIC;
+    double cipherIC;
+
+    printf("CAESAR CIPHER WITH INDEX OF COINCIDENCE\n");
+
+    printf("\n1. Encrypt plaintext.txt");
+    printf("\n2. Decrypt ciphertext.txt");
+
+    printf("\n\nEnter your choice: ");
+    scanf("%d", &choice);
+
+    printf("Enter the shift key: ");
+    scanf("%d", &key);
+
+    if (choice == 1) {
+
+        fin = fopen("plaintext.txt", "r");
+
+        if (fin == NULL) {
+
+            printf("plaintext.txt not found.\n");
+            return 1;
+        }
+
+        fout = fopen("ciphertext.txt", "w");
+
+        if (fout == NULL) {
+
+            printf("Cannot create ciphertext.txt\n");
+            fclose(fin);
+            return 1;
+        }
+
+        encrypt(fin, fout, key);
+
+        fclose(fin);
+        fclose(fout);
+
+        printf("\nEncryption completed.");
+        printf("\nCiphertext stored in ciphertext.txt\n");
+
+        plainIC = calculateIC("plaintext.txt");
+        cipherIC = calculateIC("ciphertext.txt");
+
+        printf("\n----- INDEX OF COINCIDENCE -----\n");
+
+        printf("IC of Plaintext  : %.4f\n", plainIC);
+        printf("IC of Ciphertext : %.4f\n", cipherIC);
+    }
+
+    else if (choice == 2) {
+
+        fin = fopen("ciphertext.txt", "r");
+
+        if (fin == NULL) {
+
+            printf("ciphertext.txt not found.\n");
+            return 1;
+        }
+
+        fout = fopen("decrypted.txt", "w");
+
+        if (fout == NULL) {
+
+            printf("Cannot create decrypted.txt\n");
+            fclose(fin);
+            return 1;
+        }
+
+        decrypt(fin, fout, key);
+
+        fclose(fin);
+        fclose(fout);
+
+        printf("\nDecryption completed.");
+        printf("\nDecrypted text stored in decrypted.txt\n");
+    }
+
+    else {
+
+        printf("Invalid choice.\n");
+    }
+
+    return 0;
+}
+
+
+
 
 
 
@@ -2473,6 +2908,11 @@ int main() {
 
 
 
+
+
+
+
+
 NORMAL EUCLIDIAN
 
 
@@ -2800,6 +3240,17 @@ openssl x509 -in cert.pem -text -noout
 
 
 
+
+
+
+
+
+
+
+
+
+
+SHELL
 
 
 
@@ -3266,6 +3717,15 @@ troubleshooting
 
 
 
+
+
+
+
+
+
+
+
+VIVA QUESTIONS
 
 
 
