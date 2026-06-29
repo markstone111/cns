@@ -1,4 +1,4 @@
-MONOALPhABETIC
+Monoalphabetic (Normal)
 
 
 
@@ -68,6 +68,215 @@ int main() {
     }
 
     fclose(fin);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+MONOALPHABETIC (256 CHARACTERS)
+
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+
+unsigned char key[256];
+unsigned char inverseKey[256];
+
+void encrypt(FILE *inputFile, FILE *outputFile)
+{
+    int ch;
+
+    while ((ch = fgetc(inputFile)) != EOF)
+    {
+        fputc(key[(unsigned char)ch], outputFile);
+    }
+}
+
+void decrypt(FILE *inputFile, FILE *outputFile)
+{
+    int ch;
+
+    while ((ch = fgetc(inputFile)) != EOF)
+    {
+        fputc(inverseKey[(unsigned char)ch], outputFile);
+    }
+}
+
+int main()
+{
+    FILE *fin, *fout;
+    int choice;
+
+    printf("1. Encrypt plaintext.txt to ciphertext.txt\n");
+    printf("2. Decrypt ciphertext.txt to decrypted.txt\n");
+    printf("Enter your choice: ");
+    scanf("%d", &choice);
+
+    /* Identity substitution.
+       Replace this with any permutation of 0-255 if required. */
+    for (int i = 0; i < 256; i++)
+    {
+        key[i] = i;
+    }
+
+    /* Build inverse table */
+    for (int i = 0; i < 256; i++)
+    {
+        inverseKey[key[i]] = i;
+    }
+
+    if (choice == 1)
+    {
+        fin = fopen("plaintext.txt", "rb");
+        fout = fopen("ciphertext.txt", "wb");
+
+        if (fin == NULL || fout == NULL)
+        {
+            printf("File Error!\n");
+            return 1;
+        }
+
+        encrypt(fin, fout);
+        printf("Encryption Successful.\n");
+    }
+    else if (choice == 2)
+    {
+        fin = fopen("ciphertext.txt", "rb");
+        fout = fopen("decrypted.txt", "wb");
+
+        if (fin == NULL || fout == NULL)
+        {
+            printf("File Error!\n");
+            return 1;
+        }
+
+        decrypt(fin, fout);
+        printf("Decryption Successful.\n");
+    }
+    else
+    {
+        printf("Invalid Choice!\n");
+        return 1;
+    }
+
+    fclose(fin);
+    fclose(fout);
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+MONOALPHABETIC (without file)
+
+
+
+
+
+
+
+
+
+
+
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+
+void encrypt(char text[], char key[]) {
+    int i;
+
+    for (i = 0; text[i] != '\0'; i++) {
+        if (isupper(text[i])) {
+            text[i] = key[text[i] - 'A'];
+        } else if (islower(text[i])) {
+            text[i] = tolower(key[text[i] - 'a']);
+        }
+    }
+}
+
+void decrypt(char text[], char key[]) {
+    int i, j;
+
+    for (i = 0; text[i] != '\0'; i++) {
+        if (isalpha(text[i])) {
+            char target = toupper(text[i]);
+
+            for (j = 0; j < 26; j++) {
+                if (key[j] == target) {
+                    if (isupper(text[i]))
+                        text[i] = 'A' + j;
+                    else
+                        text[i] = 'a' + j;
+                    break;
+                }
+            }
+        }
+    }
+}
+
+int main() {
+    int choice, i;
+    char key[27];
+    char text[1000];
+
+    printf("1. Encrypt\n");
+    printf("2. Decrypt\n");
+    printf("Enter your choice (1 or 2): ");
+    scanf("%d", &choice);
+
+    printf("Enter a 26-letter substitution key: ");
+    scanf("%26s", key);
+
+    // Convert key to uppercase
+    for (i = 0; i < 26; i++) {
+        key[i] = toupper(key[i]);
+    }
+    key[26] = '\0';
+
+    getchar(); // Clear newline left by scanf()
+
+    printf("Enter the paragraph:\n");
+    fgets(text, sizeof(text), stdin);
+
+    // Remove trailing newline added by fgets
+    text[strcspn(text, "\n")] = '\0';
+
+    if (choice == 1) {
+        encrypt(text, key);
+        printf("\nEncrypted Text:\n%s\n", text);
+    }
+    else if (choice == 2) {
+        decrypt(text, key);
+        printf("\nDecrypted Text:\n%s\n", text);
+    }
+    else {
+        printf("Invalid choice!\n");
+    }
+
+    return 0;
 }
     
     
@@ -176,6 +385,111 @@ int main() {
 
 
 
+CAESER CIPHER (256 CHARACTERS)
+
+
+
+
+
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+
+void encrypt(FILE *inputFile, FILE *outputFile, int key) {
+    int ch;
+    key = key % 256;
+
+    while ((ch = fgetc(inputFile)) != EOF) {
+        unsigned char encrypted = ((unsigned char)ch + key) % 256;
+        fputc(encrypted, outputFile);
+    }
+}
+
+void decrypt(FILE *inputFile, FILE *outputFile, int key) {
+    int ch;
+    key = key % 256;
+
+    while ((ch = fgetc(inputFile)) != EOF) {
+        unsigned char decrypted = ((unsigned char)ch - key + 256) % 256;
+        fputc(decrypted, outputFile);
+    }
+}
+
+int main() {
+    int choice, key;
+    FILE *fin = NULL;
+    FILE *fout = NULL;
+
+    printf("1. Encrypt plaintext.txt to ciphertext.txt\n");
+    printf("2. Decrypt ciphertext.txt to decrypted.txt\n");
+    printf("Enter your choice (1 or 2): ");
+    scanf("%d", &choice);
+
+    printf("Enter the shift key (0-255): ");
+    scanf("%d", &key);
+
+    key = key % 256;
+
+    if (choice == 1) {
+        fin = fopen("plaintext.txt", "rb");
+        if (fin == NULL) {
+            printf("Error opening plaintext.txt\n");
+            return 1;
+        }
+
+        fout = fopen("ciphertext.txt", "wb");
+        if (fout == NULL) {
+            printf("Error creating ciphertext.txt\n");
+            fclose(fin);
+            return 1;
+        }
+
+        encrypt(fin, fout, key);
+        printf("Encryption completed successfully.\n");
+    }
+    else if (choice == 2) {
+        fin = fopen("ciphertext.txt", "rb");
+        if (fin == NULL) {
+            printf("Error opening ciphertext.txt\n");
+            return 1;
+        }
+
+        fout = fopen("decrypted.txt", "wb");
+        if (fout == NULL) {
+            printf("Error creating decrypted.txt\n");
+            fclose(fin);
+            return 1;
+        }
+
+        decrypt(fin, fout, key);
+        printf("Decryption completed successfully.\n");
+    }
+    else {
+        printf("Invalid choice.\n");
+        return 1;
+    }
+
+    fclose(fin);
+    fclose(fout);
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 VIGENRE CIPHER
 
 
@@ -252,6 +566,121 @@ int main() {
     fclose(fout);
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+VIGENERE CIPHER (256 ASCII CHARACTERS)
+
+
+
+
+
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+void encrypt(FILE *inputFile, FILE *outputFile, char key[]) {
+    int ch;
+    int i = 0;
+    int m = strlen(key);
+
+    while ((ch = fgetc(inputFile)) != EOF) {
+        unsigned char encrypted = ((unsigned char)ch + (unsigned char)key[i % m]) % 256;
+        fputc(encrypted, outputFile);
+        i++;
+    }
+}
+
+void decrypt(FILE *inputFile, FILE *outputFile, char key[]) {
+    int ch;
+    int i = 0;
+    int m = strlen(key);
+
+    while ((ch = fgetc(inputFile)) != EOF) {
+        unsigned char decrypted = ((unsigned char)ch - (unsigned char)key[i % m] + 256) % 256;
+        fputc(decrypted, outputFile);
+        i++;
+    }
+}
+
+int main() {
+    int choice;
+    char key[100];
+    FILE *fin, *fout;
+
+    printf("1. Encrypt plaintext.txt to ciphertext.txt\n");
+    printf("2. Decrypt ciphertext.txt to decrypted.txt\n");
+    printf("Enter your choice (1 or 2): ");
+    scanf("%d", &choice);
+
+    printf("Enter the Vigenere key: ");
+    scanf("%99s", key);
+
+    if (choice == 1) {
+        fin = fopen("plaintext.txt", "rb");
+        if (fin == NULL) {
+            printf("Error opening plaintext.txt\n");
+            return 1;
+        }
+
+        fout = fopen("ciphertext.txt", "wb");
+        if (fout == NULL) {
+            printf("Error creating ciphertext.txt\n");
+            fclose(fin);
+            return 1;
+        }
+
+        encrypt(fin, fout, key);
+        printf("Encryption completed successfully.\n");
+    }
+    else if (choice == 2) {
+        fin = fopen("ciphertext.txt", "rb");
+        if (fin == NULL) {
+            printf("Error opening ciphertext.txt\n");
+            return 1;
+        }
+
+        fout = fopen("decrypted.txt", "wb");
+        if (fout == NULL) {
+            printf("Error creating decrypted.txt\n");
+            fclose(fin);
+            return 1;
+        }
+
+        decrypt(fin, fout, key);
+        printf("Decryption completed successfully.\n");
+    }
+    else {
+        printf("Invalid choice.\n");
+        return 1;
+    }
+
+    fclose(fin);
+    fclose(fout);
+
+    return 0;
+}
+
+
+
+
+
 
 
 
@@ -1899,7 +2328,7 @@ Example:
 e = 7
 
 Step 5 — Compute d
-d×e≡1(modϕ(n))
+d×e≡1(mod ϕ(n))
 
 Find multiplicative inverse.
 Example:
@@ -1908,7 +2337,7 @@ because:
 (103 × 7) mod 120 = 1
 
 Final Keys
-Key	Value
+Key		Value
 Public Key	(e,n)
 Private Key	(d,n)
 
@@ -2005,7 +2434,6 @@ int main() {
     printf("Calculated phi   = %lld\n", phi);
     printf("Public Key (e)   = %lld\n", e);
     printf("Private Key (d)  = %lld\n", d);
-    printf("----------------------\n\n");
 
     if (choice == 1) {
         fin = fopen("plaintext.txt", "r");
@@ -2059,7 +2487,6 @@ int euclid(int a, int b) {
 
     while (b > 0) {
         r = a % b;
-        /* Step update shift */
         a = b;
         b = r;
     }
@@ -2166,66 +2593,6 @@ int main() {
 
 
 
-A MOD B MULTIPlicaTIVE INVERSE USING EXTENDED EUclidIAM
-
-
-
-
-
-#include <stdio.h>
-
-/* Extended Euclidean Algorithm */
-/* Returns gcd, and updates x and y via pointers */
-int extendedGCD(int a, int n, int *x, int *y) {
-    /* Base Case */
-    if (a == 0) {
-        *x = 0;
-        *y = 1;
-        return n;
-    }
-
-    int x1, y1; /* To store results of recursive call */
-    int gcd = extendedGCD(n % a, a, &x1, &y1);
-
-    /* Update x and y using results of recursive call */
-    *x = y1 - (n / a) * x1;
-    *y = x1;
-
-    return gcd;
-}
-
-int main() {
-    int a, n;
-    int x, y;
-
-    printf("Enter number (a): ");
-    scanf("%d", &a);
-    printf("Enter modulo (n): ");
-    scanf("%d", &n);
-
-    int gcd = extendedGCD(a, n, &x, &y);
-
-    /* Inverse exists only if gcd(a, n) is 1 */
-    if (gcd != 1) {
-        printf("Modular inverse does not exist because gcd(%d, %d) != 1\n", a, n);
-    } else {
-        /* Handling negative results to keep the inverse positive within modulo n range */
-        int inverse = (x % n + n) % n;
-        printf("The modular inverse of %d mod %d is: %d\n", a, n, inverse);
-    }
-
-    return 0;
-}
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2276,6 +2643,10 @@ echo "AAAAAAAABAAAAAAA" > p2.txt
 openssl enc -aes-128-ecb -in p1.txt -out c1.bin -k pass123
 openssl enc -aes-128-ecb -in p2.txt -out c2.bin -k pass123
 
+xxd c1.bin
+xxd c2.bin
+
+
 
 
 
@@ -2305,6 +2676,9 @@ openssl rsautl -encrypt -inkey public.pem -pubin -in message.txt -out cipher.bin
 Decrypt Message
 openssl rsautl -decrypt -inkey private.pem -in cipher.bin -out decrypted.txt
 
+echo "Decrypted Message:"
+cat decrypted.txt
+
 
 
 
@@ -2324,12 +2698,108 @@ openssl dgst -sha256 b.txt
 
 
 
+
+Self-signed digital certificate
+
+
+
+
+# Generate RSA Private Key
+openssl genrsa -out private.pem 2048
+
+# View Private Key
+openssl rsa -in private.pem -text -noout
+
+# Generate Public Key
+openssl rsa -in private.pem -pubout -out public.pem
+
+# View Public Key
+openssl rsa -pubin -in public.pem -text -noout
+
+# Generate CSR
+openssl req -new -key private.pem -out request.csr
+
+# View CSR
+openssl req -in request.csr -text -noout
+
+# Generate Self-Signed Certificate
+openssl x509 -req -days 365 -in request.csr -signkey private.pem -out cert.pem
+
+# View Certificate
+openssl x509 -in cert.pem -text -noout
+
+# Verify Certificate
+openssl verify -CAfile cert.pem cert.pem
+
+# Display Subject
+openssl x509 -in cert.pem -subject -noout
+
+# Display Issuer
+openssl x509 -in cert.pem -issuer -noout
+
+# Display Validity
+openssl x509 -in cert.pem -dates -noout
+
+# Display Fingerprint
+openssl x509 -in cert.pem -fingerprint -sha256 -noout
+
+# Display Serial Number
+openssl x509 -in cert.pem -serial -noout
+
+
+
+
+
+
+Digital Signature
+
+
+
+
+
+# Generate RSA Private Key
+openssl genrsa -out private.pem 2048
+
+# View Private Key
+openssl rsa -in private.pem -text -noout
+
+# Generate Public Key
+openssl rsa -in private.pem -pubout -out public.pem
+
+# View Public Key
+openssl rsa -pubin -in public.pem -text -noout
+
+# Create Message
+echo "Hello Digital Signature" > message.txt
+
+# View Message
+cat message.txt
+
+# Generate SHA-256 Digest
+openssl dgst -sha256 message.txt
+
+# Generate Digital Signature
+openssl dgst -sha256 -sign private.pem -out signature.bin message.txt
+
+# Verify Digital Signature
+openssl dgst -sha256 -verify public.pem -signature signature.bin message.txt
+
+
+
+
+
+
+
+
 Generate Self-Signed Digital Certificate
 
 openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
 
 View Certificate
 openssl x509 -in cert.pem -text -noout
+
+
+
 
 
 
@@ -2472,8 +2942,6 @@ openssl dgst -sha256 \
 -signature sign.bin \
 msg.txt
 
-echo "Decrypted Message:"
-cat decrypted.txt
 
 
 
@@ -2497,19 +2965,19 @@ NMAP
 
 
 
-TCP
+TCP (full handshake)
 
 nmap -sT 192.168.1.1 
 
 
 
-UDP
+UDP (no handshake, connction less)
 
 nmap -sU 192.168.1.1
 
 
 
-SYN Scan
+SYN Scan (Stelth scan, half handshake, syn + syn ack + rst)
 
 nmap -sS 192.168.1.1
 
@@ -2784,4 +3252,743 @@ monitoring
 troubleshooting
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1. MAC Address
+
+Physical address of a network interface.
+48 bits (6 bytes).
+Written as 00:1A:2B:3C:4D:5E.
+Works at Layer 2.
+Assigned by manufacturer (generally).
+
+Viva: Difference between IP and MAC?
+
+IP = Logical address (can change).
+MAC = Physical address (normally fixed).
+
+
+
+2. IP Address
+
+Logical address used to identify devices.
+Works at Layer 3.
+Used for routing.
+
+Example:
+
+192.168.1.10
+
+
+3. ARP (Address Resolution Protocol)
+
+Converts
+IP → MAC
+ARP Request = Broadcast
+ARP Reply = Unicast
+Works only inside the same LAN.
+
+Wireshark Filter
+
+arp
+
+
+4. ARP Cache
+
+
+Stores recently resolved IP-MAC mappings.
+
+Example
+
+192.168.1.20
+
+↓
+
+00:11:22:33:44:55
+
+Avoids sending ARP request every time.
+
+View
+
+Linux
+
+arp -a
+
+or
+
+ip neigh
+
+Windows
+
+arp -a
+
+
+
+5. ARP Spoofing
+
+
+
+Attacker sends fake ARP replies.
+
+Victim stores wrong MAC.
+
+Used in
+
+MITM Attack
+Packet Sniffing
+
+
+
+6. RARP
+
+
+Reverse ARP
+
+MAC
+
+↓
+
+IP
+
+Mostly obsolete.
+
+
+
+7. IPv4
+
+
+32 bits
+Four octets
+
+Example
+
+192.168.1.10
+
+
+
+8. IPv6
+
+
+
+128 bits
+
+Example
+
+2001:db8::1
+
+Advantages
+
+Huge address space
+Better security
+No address exhaustion
+
+
+
+9. Classful Addressing
+
+
+
+Class	Range	Default Mask
+A	1-126	255.0.0.0
+B	128-191	255.255.0.0
+C	192-223	255.255.255.0
+D	224-239	Multicast
+E	240-255	Experimental
+
+
+
+10. Classless Addressing (CIDR)
+
+
+Uses prefix length.
+
+Example
+
+192.168.1.0/24
+
+No fixed classes.
+
+Better utilization.
+
+
+
+11. Subnetting
+
+
+
+Dividing one network into smaller networks.
+
+Purpose
+
+Better management
+Less broadcast traffic
+Better security
+
+
+
+12. Supernetting
+
+
+
+Combining multiple networks into one.
+
+Purpose
+
+Reduce routing table size.
+
+
+
+
+13. VLSM
+
+
+Variable Length Subnet Mask.
+
+
+Different subnet sizes according to requirement.
+
+Efficient IP utilization.
+
+
+
+
+14. Default Gateway
+
+Router through which packets leave the local network.
+
+Example
+
+192.168.1.1
+
+
+
+
+15. Routing Table
+
+Stores
+
+Destination Network
+
+↓
+
+Next Hop
+
+Router uses it to decide where packets should go.
+
+View
+
+Linux
+
+ip route
+
+Windows
+
+route print
+
+
+
+16. Forwarding Table
+
+Optimized version of the routing table used for actual packet forwarding.
+
+Routing table decides.
+
+Forwarding table forwards.
+
+
+
+
+17. TTL (Time To Live)
+
+Limits packet lifetime.
+
+Each router
+
+TTL--
+
+
+If TTL becomes
+
+0
+
+Packet discarded.
+
+ICMP Time Exceeded sent.
+
+Purpose
+
+Prevent routing loops.
+
+
+
+
+18. ICMP
+
+Internet Control Message Protocol.
+
+Used by
+
+Ping
+Traceroute
+Error reporting
+
+Not used for data transfer.
+
+
+
+
+19. Ping
+
+Uses
+
+ICMP Echo Request
+
+ICMP Echo Reply
+
+Checks
+
+Host reachable
+Delay
+
+
+
+
+20. Traceroute
+
+Shows path taken by packet.
+
+Uses TTL.
+
+TTL
+
+1
+
+↓
+
+2
+
+↓
+
+3
+
+Each router sends
+
+ICMP Time Exceeded
+
+Finally destination replies.
+
+
+
+
+21. Fragmentation
+
+Occurs when packet > MTU.
+
+Packet divided into fragments.
+
+Reassembled at destination.
+
+
+
+
+22. MTU
+
+Maximum Transmission Unit.
+
+Ethernet
+
+1500 Bytes
+
+
+
+
+23. NAT
+
+Network Address Translation.
+
+Converts
+
+Private IP
+
+↓
+
+Public IP
+
+Conserves public IP addresses.
+
+
+
+
+24. PAT
+
+Port Address Translation.
+
+Many private hosts
+
+↓
+
+One public IP
+
+Different ports.
+
+Used in home routers.
+
+
+
+
+25. TCP
+
+Reliable protocol.
+
+Features
+
+Connection-oriented
+Ordered delivery
+Error checking
+Flow control
+
+Handshake
+
+SYN
+
+↓
+
+SYN ACK
+
+↓
+
+ACK
+
+
+
+
+26. UDP
+
+Connectionless.
+
+No handshake.
+
+Fast.
+
+Used in
+
+DNS
+Streaming
+Gaming
+
+
+
+27. TCP Flags
+URG
+
+ACK
+
+PSH
+
+RST
+
+SYN
+
+FIN
+
+Remember
+
+U A P R S F
+
+
+
+
+28. TCP Sequence Number
+
+Identifies byte position.
+
+Helps reorder packets.
+
+29. ACK Number
+
+Acknowledges received bytes.
+
+30. Window Size
+
+Flow control.
+
+Determines how much data can be sent before ACK.
+
+31. Flow Control
+
+Prevents receiver overflow.
+
+Uses sliding window.
+
+32. Congestion Control
+
+Prevents network congestion.
+
+TCP algorithms
+
+Slow Start
+Congestion Avoidance
+33. Ports
+
+16-bit number.
+
+Range
+
+0-65535
+Well-known Ports
+0-1023
+
+Examples
+
+Port	Service
+20	FTP Data
+21	FTP
+22	SSH
+23	Telnet
+25	SMTP
+53	DNS
+80	HTTP
+110	POP3
+143	IMAP
+443	HTTPS
+Registered Ports
+1024-49151
+Dynamic / Ephemeral Ports
+49152-65535
+
+Temporary client ports.
+
+Example
+
+Browser
+
+Source Port
+
+53421
+
+↓
+
+Destination Port
+
+443
+
+The client port is ephemeral.
+
+34. HTTP
+
+Port
+
+80
+
+Plain text.
+
+35. HTTPS
+
+Port
+
+443
+
+HTTP + TLS.
+
+Encrypted.
+
+36. SSL vs TLS
+
+SSL
+
+Old.
+
+Deprecated.
+
+TLS
+
+New.
+
+Secure.
+
+37. DNS
+
+Converts
+
+Domain Name
+
+↓
+
+IP Address
+
+Uses
+
+Port
+
+53
+38. DHCP
+
+Automatically assigns IP.
+
+DORA Process
+
+Discover
+
+↓
+
+Offer
+
+↓
+
+Request
+
+↓
+
+Acknowledge
+39. FTP
+
+Port
+
+21
+
+Transfers files.
+
+40. SSH
+
+Port
+
+22
+
+Secure remote login.
+
+41. Hub
+
+Layer 1.
+
+Broadcasts data to every port.
+
+No intelligence.
+
+42. Switch
+
+Layer 2.
+
+Uses MAC table.
+
+Sends frame only to destination.
+
+43. Router
+
+Layer 3.
+
+Uses IP addresses.
+
+Connects different networks.
+
+44. Gateway
+
+Connects different protocols or networks.
+
+Acts as an entry/exit point.
+
+45. Firewall
+
+Filters packets.
+
+Allows or blocks traffic.
+
+Linux uses
+
+iptables
+46. Collision Domain
+
+Where collisions can occur.
+
+Hub → One large collision domain.
+Switch → One collision domain per port.
+47. Broadcast Domain
+
+Area where broadcasts are received.
+
+Router separates broadcast domains.
+
+48. OSI Model
+7 Application
+
+6 Presentation
+
+5 Session
+
+4 Transport
+
+3 Network
+
+2 Data Link
+
+1 Physical
+
+Mnemonic:
+
+All People Seem To Need Data Processing
+
+49. TCP/IP Model
+Application
+
+Transport
+
+Internet
+
+Network Access
+50. Most Asked Rapid-Fire Viva Questions
+Question	Answer
+ARP converts?	IP → MAC
+RARP converts?	MAC → IP
+Ping uses?	ICMP
+Traceroute uses?	TTL + ICMP
+HTTPS Port?	443
+HTTP Port?	80
+DNS Port?	53
+SSH Port?	22
+FTP Port?	21
+SMTP Port?	25
+POP3 Port?	110
+IMAP Port?	143
+TCP or UDP for HTTP?	TCP
+TCP or UDP for DNS?	Usually UDP (TCP for zone transfers and large responses)
+TCP reliable?	Yes
+UDP reliable?	No
+TTL full form?	Time To Live
+ARP Request?	Broadcast
+ARP Reply?	Unicast
+Default MTU?	1500 Bytes
+IPv4 size?	32 bits
+IPv6 size?	128 bits
+MAC size?	48 bits
+Port size?	16 bits
+Ephemeral Ports?	49152–65535
+SYN means?	Connection Request
+FIN means?	Connection Termination
+RST means?	Reset Connection
+ACK means?	Acknowledgement
+Router works at?	Layer 3
+Switch works at?	Layer 2
+Hub works at?	Layer 1
 
